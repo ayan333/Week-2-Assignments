@@ -41,17 +41,34 @@
  */
 const express = require('express');
 const bodyParser = require('body-parser');
+const fs = require('fs')
 const app = express();
 const port = 3000;
+const datastore_path = "C:\\Users\\ayanm\\Documents\\FullStack\\Assignments\\2\\Week-2-Assignments\\02-nodejs\\data.txt";
 
 app.use(bodyParser.json());
 
-const todoList = [];
+let todoList = [];
 var id_counter = 0;
 
 const getTodos = (req, res)=>{
-  res.status(200).send(todoList);
+  fs.readFile(datastore_path, 'utf-8', (err, data)=>{
+    if(err){
+        console.log(err);
+    }
+    else{
+      if(data==""){
+        console.log("data: empty");
+        todoList = [];
+      }
+      else{
+        todoList = JSON.parse(data);
+        res.status(200).send(todoList);
+      }
+    }
+  })  
 }
+
 
 const addToDoItem = (req, res)=>{
   id_counter += 1;
@@ -60,41 +77,111 @@ const addToDoItem = (req, res)=>{
     title: req.body.title,
     description: req.body.description
   }
-  todoList.push(newTodoItem);
-  res.status(201).json(newTodoItem);
+  fs.readFile(datastore_path, 'utf-8', (err, data)=>{
+    if(err){
+        console.log(err);
+    }
+    else{
+        
+        if(data==""){
+          console.log("data: empty");
+          todoList = [];
+        }
+        else{
+          console.log("data: "+data);
+          todoList = JSON.parse(data);
+        }
+        console.log(todoList);
+        todoList.push(newTodoItem);
+        const to_write = JSON.stringify(todoList);
+        fs.writeFile(datastore_path, to_write, ()=>{
+          res.status(201).json(newTodoItem);
+        });
+    }
+  })
 }
 
+
 const getToDoItem = (req, res) => {
-  const todo = todoList.find(t=>(t.id == req.params.id));
-  if(todo){
-    res.status(200).json(todo);
-  }
-  else{
-    res.status(404).send()
-  }
+  fs.readFile(datastore_path, 'utf-8', (err, data)=>{
+    if(err){
+        console.log(err);
+    }
+    else{
+        if(data==""){
+          console.log("data: empty");
+          todoList = [];
+        }
+        else{
+          todoList = JSON.parse(data);
+        }
+        const todo = todoList.find(t=>(t.id == req.params.id));
+        if(todo){
+          res.status(200).json(todo);
+        }
+        else{
+          res.status(404).send()
+        }
+    }
+  })
 }
 
 const updateToDoItem = (req, res) => {
-  const todo_idx = todoList.findIndex(f=>(f.id == req.params.id))
-  if(todo_idx===-1){
-    res.status(404).send()
-  }
-  else{
-    todoList[todo_idx].title = req.body.title;
-    todoList[todo_idx].description = req.body.description;
-    res.status(200).json(todoList[todo_idx]);
-  }
+  fs.readFile(datastore_path, 'utf-8', (err, data)=>{
+    if(err){
+        console.log(err);
+    }
+    else{
+        if(data==""){
+          console.log("data: empty");
+          todoList = [];
+        }
+        else{
+          todoList = JSON.parse(data);
+        }
+        const todo_idx = todoList.findIndex(f=>(f.id == req.params.id))
+        if(todo_idx===-1){
+          res.status(404).send()
+        }
+        else{
+          todoList[todo_idx].title = req.body.title;
+          todoList[todo_idx].description = req.body.description;
+          const to_write = JSON.stringify(todoList);
+          fs.writeFile(datastore_path, to_write, ()=>{
+            res.status(200).json(todoList[todo_idx]);
+          });    
+        }
+    }
+  })
 }
 
 const deleteToDoItem = (req, res) => {
-  const todo_idx = todoList.findIndex(f=>(f.id == req.params.id));
-  if(todo_idx===-1){
-    res.status(404).send();
-  }
-  else{
-    todoList.splice(todo_idx,1);
-    res.status(200).send();
-  }
+  fs.readFile(datastore_path, 'utf-8', (err, data)=>{
+    if(err){
+        console.log(err);
+    }
+    else{
+        if(data==""){
+          console.log("data: empty");
+          todoList = [];
+        }
+        else{
+          todoList = JSON.parse(data);
+        }
+        const todo_idx = todoList.findIndex(f=>(f.id == req.params.id));
+        if(todo_idx===-1){
+          res.status(404).send();
+        }
+        else{
+          todoList.splice(todo_idx,1);
+          const to_write = JSON.stringify(todoList);
+          fs.writeFile(datastore_path, to_write, ()=>{
+            res.status(200).send();
+          });  
+        }
+    }
+  })
+  
 }
 
 app.get('/todos', getTodos);
@@ -107,8 +194,8 @@ app.use((req, res, next)=>{
   res.status(404).send();
 });
 
-//app.listen(port,()=>{ 
-//  console.log(`App listening on port ${port}`);
-//})
+// app.listen(port,()=>{ 
+//   console.log(`App listening on port ${port}`);
+// })
 
 module.exports = app;
